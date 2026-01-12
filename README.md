@@ -83,25 +83,47 @@ Creates `./spec/refactor-database-layer/` and runs through all phases without pa
 
 ### Force Restart Mode
 
-When working on large features, Claude's context window can fill up. The `--force-restart` flag enables automatic quitting and restarting with fresh context:
-
-```bash
-# Run with force restart enabled
-/ralph-specum "my large feature" --mode auto --force-restart
-```
+When working on large features, Claude's context window can fill up. The `--force-restart` flag enables automatic quitting and restarting with fresh context.
 
 **How it works:**
-1. After all spec phases complete (requirements → design → tasks), Claude **quits completely**
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Claude Run 1   │     │  Claude Run 2   │     │  Claude Run 3   │
+│                 │     │                 │     │                 │
+│ • Requirements  │     │ • Task 1        │     │ • Task 2        │
+│ • Design        │ ──► │ • (quit)        │ ──► │ • Task 3...     │
+│ • Tasks         │     │                 │     │                 │
+│ • (quit)        │     │ Fresh context!  │     │ Fresh context!  │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+        │                       │                       │
+        ▼                       ▼                       ▼
+   .ralph-restart          .ralph-restart         (complete)
+   marker written          marker written
+```
+
+1. After spec phases complete (requirements → design → tasks), Claude **quits completely**
 2. A `.ralph-restart` marker file is created with resume context
-3. A new Claude instance can pick up where the previous one left off
+3. The runner script detects the marker and launches a **new Claude instance**
+4. Repeat for each task until all done
 
-**Using the restart runner:**
+**Usage - Run with the wrapper script:**
 ```bash
-# Run the restart runner in a terminal - it monitors and relaunches Claude automatically
-./hooks/scripts/restart-runner.sh ./spec
+# This runs Claude in a loop, auto-restarting with fresh context
+./hooks/scripts/ralph-runner.sh "Add user auth with JWT" --mode auto
 
-# Or run Claude manually - it will quit when phases complete
-# Then run again to continue with task execution
+# The wrapper automatically adds --force-restart
+# Each phase/task gets a fresh Claude instance
+```
+
+**Or manually:**
+```bash
+# Step 1: Start the workflow
+claude "/ralph-specum \"my feature\" --mode auto --force-restart"
+# Claude exits after phases complete...
+
+# Step 2: Continue with fresh context (repeat until done)
+claude "/ralph-specum:implement"
 ```
 
 **When to use:**
@@ -280,7 +302,8 @@ ralph-specum/
 │   ├── hooks.json
 │   └── scripts/
 │       ├── stop-handler.sh
-│       └── restart-runner.sh
+│       ├── restart-runner.sh
+│       └── ralph-runner.sh
 ├── templates/
 │   ├── requirements.md
 │   ├── design.md
