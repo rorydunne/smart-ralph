@@ -69,6 +69,20 @@ if [[ $GLOBAL_ITER -ge $MAX_GLOBAL_ITER ]]; then
     exit 0
 fi
 
+# Check if awaiting user approval between phases
+AWAITING_APPROVAL=$(echo "$STATE" | jq -r '.awaitingApproval // false' 2>/dev/null)
+NEXT_COMMAND=$(echo "$STATE" | jq -r '.nextCommand // empty' 2>/dev/null)
+
+if [[ "$AWAITING_APPROVAL" == "true" && -n "$NEXT_COMMAND" ]]; then
+    # Block and prompt user to run next phase command
+    PHASE_NAME=$(echo "$STATE" | jq -r '.phase // "unknown"' 2>/dev/null)
+    jq -n \
+        --arg reason "Phase '$PHASE_NAME' complete. Waiting for user review and approval." \
+        --arg msg "Run $NEXT_COMMAND to continue (or /ralph-specum:cancel to stop)" \
+        '{"decision": "block", "reason": $reason, "systemMessage": $msg}'
+    exit 0
+fi
+
 # Only handle execution phase for task loop
 if [[ "$PHASE" != "execution" ]]; then
     exit 0  # Allow stop for non-execution phases (research, requirements, design, tasks)

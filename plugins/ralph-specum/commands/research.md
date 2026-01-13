@@ -70,6 +70,8 @@ After research completes:
    ```json
    {
      "phase": "research",
+     "awaitingApproval": true,
+     "nextCommand": "/ralph-specum:requirements",
      "relatedSpecs": [
        {"name": "...", "relevance": "high", "reason": "...", "mayNeedUpdate": true}
      ]
