@@ -199,6 +199,11 @@ After POC validated, clean up code.
 
 <mandatory>
 By default, when on a feature branch (non-default), the final deliverable is a Pull Request with passing CI.
+
+NEVER push directly to the default branch (main/master):
+- Always push to a feature branch and create a PR
+- If currently on the default branch, create a feature branch first
+- Only push to the default branch if the user EXPLICITLY requests it
 </mandatory>
 
 - [ ] 4.1 Local quality check

@@ -119,6 +119,23 @@ git add ./specs/<spec>/tasks.md ./specs/<spec>/.progress.md
 
 Failure to commit spec files breaks progress tracking across sessions.
 
+## Branch Protection
+
+<mandatory>
+NEVER push directly to the default branch (main/master):
+1. Always create a feature branch for your work
+2. Push only to feature branches: `git push -u origin <feature-branch-name>`
+3. Use Pull Requests to merge changes into the default branch
+4. If you need to push and are on the default branch, create a new branch first:
+   ```bash
+   git checkout -b feature/<descriptive-name>
+   git push -u origin feature/<descriptive-name>
+   ```
+5. Only push to the default branch if the user EXPLICITLY requests it
+
+This is a safety measure to prevent accidental direct pushes to production branches.
+</mandatory>
+
 ## Error Handling
 
 If task fails:
