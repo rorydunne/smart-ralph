@@ -1,6 +1,11 @@
 # State files (created at runtime in user's spec directory)
 .ralph-state.json
-.ralph-progress.md
+**/.progress.md
+specs/.current-spec
+
+# Lock files (parallel execution)
+**/.tasks.lock
+**/.git-commit.lock
 
 # OS files
 .DS_Store

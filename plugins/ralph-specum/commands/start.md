@@ -50,13 +50,17 @@ git rev-parse --verify origin/main 2>/dev/null && echo "main" || echo "master"
    |   |   - If spec name not yet known, use temp name: feat/spec-work-<timestamp>
    |   |   - Create and switch: git checkout -b <branch-name>
    |   |   - Inform user: "Created branch '<branch-name>' for this work"
+   |   |   - Suggest: "Run /ralph-specum:research to start the research phase."
    |   |
    |   +-- If user chooses 2 (worktree):
    |   |   - Generate branch name from spec name: feat/$specName
    |   |   - Determine worktree path: ../<repo-name>-<spec-name> or prompt user
    |   |   - Create worktree: git worktree add <path> -b <branch-name>
    |   |   - Inform user: "Created worktree at '<path>' on branch '<branch-name>'"
-   |   |   - Note: User must cd to worktree directory to continue work there
+   |   |   - IMPORTANT: Suggest user to cd to worktree and resume conversation there:
+   |   |     "For best results, cd to '<path>' and start a new Claude Code session from there."
+   |   |     "Then run /ralph-specum:research to begin."
+   |   |   - STOP HERE - do not continue to Parse Arguments (user needs to switch directories)
    |   |
    |   +-- Continue to Parse Arguments
    |
@@ -71,12 +75,15 @@ git rev-parse --verify origin/main 2>/dev/null && echo "main" || echo "master"
        |
        +-- If user chooses 1 (continue):
        |   - Stay on current branch
+       |   - Suggest: "Run /ralph-specum:research to start the research phase."
        |   - Continue to Parse Arguments
        |
        +-- If user chooses 2 (new branch):
        |   - Generate branch name from spec name: feat/$specName
        |   - If spec name not yet known, use temp name: feat/spec-work-<timestamp>
        |   - Create and switch: git checkout -b <branch-name>
+       |   - Inform user: "Created branch '<branch-name>' for this work"
+       |   - Suggest: "Run /ralph-specum:research to start the research phase."
        |   - Continue to Parse Arguments
        |
        +-- If user chooses 3 (worktree):
@@ -84,7 +91,10 @@ git rev-parse --verify origin/main 2>/dev/null && echo "main" || echo "master"
            - Determine worktree path: ../<repo-name>-<spec-name> or prompt user
            - Create worktree: git worktree add <path> -b <branch-name>
            - Inform user: "Created worktree at '<path>' on branch '<branch-name>'"
-           - Note: User must cd to worktree directory to continue work there
+           - IMPORTANT: Suggest user to cd to worktree and resume conversation there:
+             "For best results, cd to '<path>' and start a new Claude Code session from there."
+             "Then run /ralph-specum:research to begin."
+           - STOP HERE - do not continue to Parse Arguments (user needs to switch directories)
 ```
 
 ### Branch Naming Convention
@@ -120,8 +130,19 @@ git worktree add "$WORKTREE_PATH" -b "feat/${SPEC_NAME}"
 
 After worktree creation:
 - Inform user of the worktree path
-- Spec files will be created in current directory's `./specs/` (not worktree)
-- User should `cd` to worktree to continue implementation work
+- IMPORTANT: Output clear guidance for the user:
+  ```
+  Created worktree at '<path>' on branch '<branch-name>'
+
+  For best results, cd to the worktree directory and start a new Claude Code session from there:
+
+    cd <path>
+    claude
+
+  Then run /ralph-specum:research to begin the research phase.
+  ```
+- STOP the command here - do not continue to Parse Arguments or create spec files
+- The user needs to switch directories first to work in the worktree
 - To clean up later: `git worktree remove <path>`
 
 ### Quick Mode Branch Handling
@@ -280,6 +301,10 @@ Example: "Build authentication with JWT tokens" -> "build-authentication-with"
 2. Infer name from goal (if not provided)
    |
 3. Create spec directory: ./specs/$name/
+   |
+3a. Ensure gitignore entries exist for spec state files:
+   - Add specs/.current-spec to .gitignore if not present
+   - Add **/.progress.md to .gitignore if not present
    |
 4. Write .ralph-state.json:
    {
@@ -442,7 +467,18 @@ The only exception is `--quick` mode, which skips approval between phases.
    - "What is the goal? Describe what you want to build."
 3. Create spec directory: `./specs/$name/`
 4. Update active spec: `echo "$name" > ./specs/.current-spec`
-5. Initialize `.ralph-state.json`:
+5. Ensure gitignore entries exist for spec state files:
+   ```bash
+   # Add .current-spec and .progress.md to .gitignore if not already present
+   if [ -f .gitignore ]; then
+     grep -q "specs/.current-spec" .gitignore || echo "specs/.current-spec" >> .gitignore
+     grep -q "\*\*/\.progress\.md" .gitignore || echo "**/.progress.md" >> .gitignore
+   else
+     echo "specs/.current-spec" > .gitignore
+     echo "**/.progress.md" >> .gitignore
+   fi
+   ```
+6. Initialize `.ralph-state.json`:
    ```json
    {
      "source": "spec",
@@ -458,8 +494,96 @@ The only exception is `--quick` mode, which skips approval between phases.
    }
    ```
 6. Create `.progress.md` with goal
-7. Invoke research-analyst agent
-8. **STOP** - research-analyst sets awaitingApproval=true. Output status and wait for user to run `/ralph-specum:requirements`
+7. **Goal Interview** (skip if --quick in $ARGUMENTS)
+8. Invoke research-analyst agent with goal interview context
+9. **STOP** - research-analyst sets awaitingApproval=true. Output status and wait for user to run `/ralph-specum:requirements`
+
+## Goal Interview (Pre-Research)
+
+<mandatory>
+**Skip interview if --quick flag detected in $ARGUMENTS.**
+
+If NOT quick mode, conduct goal interview using AskUserQuestion before research phase.
+</mandatory>
+
+### Quick Mode Check
+
+Check if `--quick` appears in `$ARGUMENTS`. If present, skip directly to "Invoke research-analyst".
+
+### Goal Interview Questions
+
+Use AskUserQuestion to clarify the goal before research:
+
+```
+AskUserQuestion:
+  questions:
+    - question: "What problem are you solving with this feature?"
+      options:
+        - "Fixing a bug or issue"
+        - "Adding new functionality"
+        - "Improving existing behavior"
+        - "Other"
+    - question: "Any constraints or must-haves for this feature?"
+      options:
+        - "No special constraints"
+        - "Must integrate with existing code"
+        - "Performance is critical"
+        - "Other"
+    - question: "How will you know this feature is successful?"
+      options:
+        - "Tests pass and code works"
+        - "Users can complete specific workflow"
+        - "Performance meets target metrics"
+        - "Other"
+```
+
+### Adaptive Depth
+
+If user selects "Other" for any question:
+1. Ask follow-up question to clarify their custom response
+2. Continue until clarity reached or 5 rounds complete
+3. Each follow-up round uses single question focused on the "Other" response
+
+Example follow-up:
+```
+AskUserQuestion:
+  questions:
+    - question: "You mentioned [Other response]. Can you elaborate?"
+      options:
+        - "[Contextual option 1]"
+        - "[Contextual option 2]"
+        - "This is sufficient detail"
+        - "Other"
+```
+
+### Store Goal Context
+
+After interview, update `.progress.md` to include Goal Context section:
+
+```markdown
+## Goal Context
+
+Interview responses from goal clarification:
+- Problem: [response to question 1]
+- Constraints: [response to question 2]
+- Success criteria: [response to question 3]
+[Additional follow-up responses if any]
+```
+
+### Pass Context to Research
+
+Include goal interview context when invoking research-analyst:
+
+```
+Task delegation prompt should include:
+
+Goal Interview Context:
+- Problem: [response]
+- Constraints: [response]
+- Success criteria: [response]
+
+Use this context to focus research on relevant areas.
+```
 
 ## Quick Mode Flow
 
