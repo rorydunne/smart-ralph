@@ -114,7 +114,7 @@ approach: wrapper
   - _Spec: FR-7, AC-5.2, AC-5.3, AC-5.4, AC-5.5_
   - _Plan: Spec Executor Agent_
 
-- [ ] 2.6 Create qa-engineer agent
+- [x] 2.6 Create qa-engineer agent
   - **Do**: Adapt ralph-specum's qa-engineer.md. Update paths from `./specs/` to `.specify/specs/`. Keep VERIFICATION_PASS/VERIFICATION_FAIL signals, command execution, AC checklist handling.
   - **Files**: `plugins/ralph-speckit/agents/qa-engineer.md`
   - **Verify**: `grep -q "VERIFICATION_PASS\|VERIFICATION_FAIL" plugins/ralph-speckit/agents/qa-engineer.md`
