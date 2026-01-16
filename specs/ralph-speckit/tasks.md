@@ -33,7 +33,7 @@ approach: wrapper
   - **Commit**: `chore(speckit): verify spec-kit CLI installed`
   - _Spec: FR-1_
 
-- [ ] 1.2 Run `specify init` to bootstrap plugin
+- [x] 1.2 Run `specify init` to bootstrap plugin
   - **Do**: Run `specify init plugins/ralph-speckit --ai claude` from repository root. This generates the base command structure in `.specify/` format.
   - **Files**: `plugins/ralph-speckit/.specify/` (entire directory generated)
   - **Verify**: `ls plugins/ralph-speckit/.specify/` shows: commands/, templates/, memory/, specs/
