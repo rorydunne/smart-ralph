@@ -207,7 +207,7 @@ approach: wrapper
 
 ## Phase 4: Templates and Progress Tracking
 
-- [ ] 4.1 Create progress.md template
+- [x] 4.1 Create progress.md template
   - **Do**: Create template at `plugins/ralph-speckit/templates/progress.md` with sections: Original Goal, Current Phase, Completed Tasks, Current Task, Learnings, Blockers, Next Steps. Follow ralph-specum format.
   - **Files**: `plugins/ralph-speckit/templates/progress.md`
   - **Verify**: `grep -c "##" plugins/ralph-speckit/templates/progress.md` (should be 5+)
