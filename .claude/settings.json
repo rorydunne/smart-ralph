@@ -1,6 +1,0 @@
-{
-  "enabledPlugins": {
-    "ralph-specum@smart-ralph": true,
-    "ralph-loop@claude-plugins-official": true
-  }
-}

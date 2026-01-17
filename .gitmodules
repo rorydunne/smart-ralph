@@ -1,0 +1,3 @@
+[submodule "smart-ralph-plugin"]
+	path = smart-ralph-plugin
+	url = https://github.com/tzachbon/smart-ralph.git
